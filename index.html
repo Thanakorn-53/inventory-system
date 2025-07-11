@@ -71,6 +71,9 @@ function addItem() {
 
   fetch(scriptURL, {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
     body: JSON.stringify({ action: "add", id, location, date }),
   }).then(() => {
     document.getElementById('id').value = '';
@@ -81,12 +84,18 @@ function addItem() {
 
 function deleteItem(row) {
   if (!confirm("ลบสินค้านี้หรือไม่?")) return;
-  fetch(scriptURL, {
+fetch(scriptURL, {
     method: 'POST',
-    body: JSON.stringify({ action: "delete", row })
-  }).then(fetchItems);
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ action: "add", id, location, date }),
+  }).then(() => {
+    document.getElementById('id').value = '';
+    document.getElementById('location').value = '';
+    fetchItems();
+  });
 }
-
 function editItem(input, row, field) {
   const id = field === 'id' ? input.value : input.parentElement.parentElement.children[0].children[0].value;
   const location = field === 'location' ? input.value : input.parentElement.parentElement.children[1].children[0].value;
@@ -94,7 +103,14 @@ function editItem(input, row, field) {
 
   fetch(scriptURL, {
     method: 'POST',
-    body: JSON.stringify({ action: "update", row, id, location, date })
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ action: "add", id, location, date }),
+  }).then(() => {
+    document.getElementById('id').value = '';
+    document.getElementById('location').value = '';
+    fetchItems();
   });
 }
 
