@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ระบบจัดเก็บสินค้าออนไลน์</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 700px;
+      margin: auto;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      margin: 6px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f0f0f0;
+    }
+    .actions button {
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h2>📦 ระบบจัดเก็บสินค้าออนไลน์</h2>
+
+  <label>รหัสสินค้า</label>
+  <input type="text" id="productId" />
+
+  <label>ตำแหน่งจัดเก็บ</label>
+  <input type="text" id="productLocation" />
+
+  <button onclick="submitProduct()" id="submitBtn">➕ เพิ่มสินค้า</button>
+
+  <input type="text" id="searchInput" placeholder="🔍 ค้นหาสินค้า..." oninput="renderTable()" />
+
+  <table>
+    <thead>
+      <tr>
+        <th>รหัสสินค้า</th>
+        <th>ตำแหน่งจัดเก็บ</th>
+        <th>วันที่</th>
+        <th>การจัดการ</th>
+      </tr>
+    </thead>
+    <tbody id="productTable"></tbody>
+  </table>
+
+  <script>
+    const scriptURL = "https://script.google.com/macros/s/AKfycby5QCM9pB_fjNrUX44ZkVD1MmG0nq1F-EL1O0Y9wNRmgFIwtAIYoIyG_5NDlGkmAeeZ/exec";
+    let products = [];
+    let editingRow = null;
+
+    function getToday() {
+      const d = new Date();
+      return d.toISOString().split('T')[0];
+    }
+
+    function loadProducts() {
+      fetch(scriptURL)
+        .then(res => res.json())
+        .then(data => {
+          products = data;
+          renderTable();
+        });
+    }
+
+    function submitProduct() {
+      const id = document.getElementById('productId').value.trim();
+      const location = document.getElementById('productLocation').value.trim();
+      if (!id || !location) return alert("กรุณากรอกข้อมูลให้ครบ");
+
+      const payload = {
+        action: editingRow ? "update" : "add",
+        id,
+        location,
+        date: getToday(),
+        row: editingRow
+      };
+
+      fetch(scriptURL, {
+        method: "POST",
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(() => {
+        editingRow = null;
+        document.getElementById("submitBtn").textContent = "➕ เพิ่มสินค้า";
+        document.getElementById("productId").value = "";
+        document.getElementById("productLocation").value = "";
+        loadProducts();
+      });
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById("productTable");
+      const search = document.getElementById("searchInput").value.toLowerCase();
+      tbody.innerHTML = "";
+
+      products.filter(p =>
+        p["รหัสสินค้า"].toLowerCase().includes(search) ||
+        p["ตำแหน่งจัดเก็บ"].toLowerCase().includes(search)
+      ).forEach(p => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${p["รหัสสินค้า"]}</td>
+          <td>${p["ตำแหน่งจัดเก็บ"]}</td>
+          <td>${p["วันที่จัดเก็บ"]}</td>
+          <td class="actions">
+            <button onclick="editProduct(${p._row}, '${p["รหัสสินค้า"]}', '${p["ตำแหน่งจัดเก็บ"]}')">✏️</button>
+            <button onclick="deleteProduct(${p._row})">🗑️</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function editProduct(row, id, location) {
+      document.getElementById("productId").value = id;
+      document.getElementById("productLocation").value = location;
+      editingRow = row;
+      document.getElementById("submitBtn").textContent = "💾 บันทึกการแก้ไข";
+    }
+
+    function deleteProduct(row) {
+      if (!confirm("ลบสินค้านี้หรือไม่?")) return;
+      fetch(scriptURL, {
+        method: "POST",
+        body: JSON.stringify({ action: "delete", row }),
+        headers: { 'Content-Type': 'application/json' }
+      }).then(() => loadProducts());
+    }
+
+    loadProducts();
+  </script>
+</body>
+</html>
