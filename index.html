@@ -1,152 +1,104 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ระบบจัดเก็บสินค้าออนไลน์</title>
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 20px;
-      max-width: 700px;
-      margin: auto;
-    }
-    input, button {
-      padding: 10px;
-      font-size: 16px;
-      margin: 6px 0;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
-    }
-    th {
-      background-color: #f0f0f0;
-    }
-    .actions button {
-      margin-right: 5px;
-    }
+    body { font-family: sans-serif; max-width: 500px; margin: auto; padding: 1rem; }
+    h1 { text-align: center; }
+    input, button { width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; font-size: 1rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: center; }
+    td button { width: auto; padding: 0.3rem 0.5rem; margin: 0 2px; }
   </style>
 </head>
 <body>
-  <h2>📦 ระบบจัดเก็บสินค้าออนไลน์</h2>
+  <h1>🏦 ระบบจัดเก็บสินค้าออนไลน์</h1>
 
-  <label>รหัสสินค้า</label>
-  <input type="text" id="productId" />
+  <input type="text" id="id" placeholder="รหัสสินค้า">
+  <input type="text" id="location" placeholder="ตำแหน่งจัดเก็บ">
+  <button onclick="addItem()">➕ เพิ่มสินค้า</button>
 
-  <label>ตำแหน่งจัดเก็บ</label>
-  <input type="text" id="productLocation" />
-
-  <button onclick="submitProduct()" id="submitBtn">➕ เพิ่มสินค้า</button>
-
-  <input type="text" id="searchInput" placeholder="🔍 ค้นหาสินค้า..." oninput="renderTable()" />
+  <input type="text" id="search" placeholder="ค้นหาสินค้า..." onkeyup="renderItems()">
 
   <table>
     <thead>
-      <tr>
-        <th>รหัสสินค้า</th>
-        <th>ตำแหน่งจัดเก็บ</th>
-        <th>วันที่</th>
-        <th>การจัดการ</th>
-      </tr>
+      <tr><th>รหัสสินค้า</th><th>ตำแหน่งจัดเก็บ</th><th>วันที่</th><th>การจัดการ</th></tr>
     </thead>
-    <tbody id="productTable"></tbody>
+    <tbody id="tableBody"></tbody>
   </table>
 
-  <script>
-    const scriptURL = "https://script.google.com/macros/s/AKfycbyB1MFURt4hAmx_Mz1DQvH3eZ80xexepG2fxjqNKDfLGWSsPMdY1WvL7vydFbD0lTezFQ/exec";
-    let products = [];
-    let editingRow = null;
+<script>
+const scriptURL = "https://script.google.com/macros/s/AKfycbyB1MFURt4hAmx_Mz1DQvH3eZ80xexepG2fxjqNKDfLGWSsPMdY1WvL7vydFbD0lTezFQ/exec";
+let items = [];
 
-    function getToday() {
-      const d = new Date();
-      return d.toISOString().split('T')[0];
-    }
+function fetchItems() {
+  fetch(scriptURL)
+    .then(res => res.json())
+    .then(data => {
+      items = data;
+      renderItems();
+    });
+}
 
-    function loadProducts() {
-      fetch(scriptURL)
-        .then(res => res.json())
-        .then(data => {
-          products = data;
-          renderTable();
-        });
-    }
+function renderItems() {
+  const keyword = document.getElementById('search').value.trim().toLowerCase();
+  const body = document.getElementById('tableBody');
+  body.innerHTML = '';
+  items.filter(item =>
+    item['รหัสสินค้า'].toLowerCase().includes(keyword) ||
+    item['ตำแหน่งจัดเก็บ'].toLowerCase().includes(keyword)
+  ).forEach(item => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input value="${item['รหัสสินค้า']}" onchange="editItem(this, '${item._row}', 'id')"></td>
+      <td><input value="${item['ตำแหน่งจัดเก็บ']}" onchange="editItem(this, '${item._row}', 'location')"></td>
+      <td>${item['วันที่']}</td>
+      <td>
+        <button onclick="deleteItem('${item._row}')">❌</button>
+      </td>
+    `;
+    body.appendChild(tr);
+  });
+}
 
-    function submitProduct() {
-      const id = document.getElementById('productId').value.trim();
-      const location = document.getElementById('productLocation').value.trim();
-      if (!id || !location) return alert("กรุณากรอกข้อมูลให้ครบ");
+function addItem() {
+  const id = document.getElementById('id').value.trim();
+  const location = document.getElementById('location').value.trim();
+  const date = new Date().toISOString().split('T')[0];
+  if (!id || !location) return alert("กรุณากรอกข้อมูลให้ครบ");
 
-      const payload = {
-        action: editingRow ? "update" : "add",
-        id,
-        location,
-        date: getToday(),
-        row: editingRow
-      };
+  fetch(scriptURL, {
+    method: 'POST',
+    body: JSON.stringify({ action: "add", id, location, date }),
+  }).then(() => {
+    document.getElementById('id').value = '';
+    document.getElementById('location').value = '';
+    fetchItems();
+  });
+}
 
-      fetch(scriptURL, {
-        method: "POST",
-        body: JSON.stringify(payload),
-        headers: { 'Content-Type': 'application/json' }
-      })
-      .then(() => {
-        editingRow = null;
-        document.getElementById("submitBtn").textContent = "➕ เพิ่มสินค้า";
-        document.getElementById("productId").value = "";
-        document.getElementById("productLocation").value = "";
-        loadProducts();
-      });
-    }
+function deleteItem(row) {
+  if (!confirm("ลบสินค้านี้หรือไม่?")) return;
+  fetch(scriptURL, {
+    method: 'POST',
+    body: JSON.stringify({ action: "delete", row })
+  }).then(fetchItems);
+}
 
-    function renderTable() {
-      const tbody = document.getElementById("productTable");
-      const search = document.getElementById("searchInput").value.toLowerCase();
-      tbody.innerHTML = "";
+function editItem(input, row, field) {
+  const id = field === 'id' ? input.value : input.parentElement.parentElement.children[0].children[0].value;
+  const location = field === 'location' ? input.value : input.parentElement.parentElement.children[1].children[0].value;
+  const date = new Date().toISOString().split('T')[0];
 
-      products.filter(p =>
-        p["รหัสสินค้า"].toLowerCase().includes(search) ||
-        p["ตำแหน่งจัดเก็บ"].toLowerCase().includes(search)
-      ).forEach(p => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${p["รหัสสินค้า"]}</td>
-          <td>${p["ตำแหน่งจัดเก็บ"]}</td>
-          <td>${p["วันที่จัดเก็บ"]}</td>
-          <td class="actions">
-            <button onclick="editProduct(${p._row}, '${p["รหัสสินค้า"]}', '${p["ตำแหน่งจัดเก็บ"]}')">✏️</button>
-            <button onclick="deleteProduct(${p._row})">🗑️</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
+  fetch(scriptURL, {
+    method: 'POST',
+    body: JSON.stringify({ action: "update", row, id, location, date })
+  });
+}
 
-    function editProduct(row, id, location) {
-      document.getElementById("productId").value = id;
-      document.getElementById("productLocation").value = location;
-      editingRow = row;
-      document.getElementById("submitBtn").textContent = "💾 บันทึกการแก้ไข";
-    }
-
-    function deleteProduct(row) {
-      if (!confirm("ลบสินค้านี้หรือไม่?")) return;
-      fetch(scriptURL, {
-        method: "POST",
-        body: JSON.stringify({ action: "delete", row }),
-        headers: { 'Content-Type': 'application/json' }
-      }).then(() => loadProducts());
-    }
-
-    loadProducts();
-  </script>
+fetchItems();
+</script>
 </body>
 </html>
