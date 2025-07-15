@@ -84,21 +84,21 @@ function addItem() {
 
 function deleteItem(row) {
   if (!confirm("ลบสินค้านี้หรือไม่?")) return;
-fetch(scriptURL, {
+
+  fetch(scriptURL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ action: "add", id, location, date }),
+    body: JSON.stringify({ action: "delete", _row: row }),
   }).then(() => {
-    document.getElementById('id').value = '';
-    document.getElementById('location').value = '';
     fetchItems();
   });
 }
+  
 function editItem(input, row, field) {
-  const id = field === 'id' ? input.value : input.parentElement.parentElement.children[0].children[0].value;
-  const location = field === 'location' ? input.value : input.parentElement.parentElement.children[1].children[0].value;
+  const id = input.parentElement.parentElement.children[0].children[0].value;
+  const location = input.parentElement.parentElement.children[1].children[0].value;
   const date = new Date().toISOString().split('T')[0];
 
   fetch(scriptURL, {
@@ -106,10 +106,8 @@ function editItem(input, row, field) {
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify({ action: "add", id, location, date }),
+    body: JSON.stringify({ action: "edit", _row: row, id, location, date }),
   }).then(() => {
-    document.getElementById('id').value = '';
-    document.getElementById('location').value = '';
     fetchItems();
   });
 }
