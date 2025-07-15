@@ -51,10 +51,11 @@ function renderItems() {
     item['ตำแหน่งจัดเก็บ'].toLowerCase().includes(keyword)
   ).forEach(item => {
     const tr = document.createElement('tr');
+    const date = new Date(item['วันที่']).toISOString().split('T')[0];
     tr.innerHTML = `
       <td><input value="${item['รหัสสินค้า']}" onchange="editItem(this, '${item._row}', 'id')"></td>
       <td><input value="${item['ตำแหน่งจัดเก็บ']}" onchange="editItem(this, '${item._row}', 'location')"></td>
-      <td>${item['วันที่']}</td>
+      <td>${date}</td>
       <td>
         <button onclick="deleteItem('${item._row}')">❌</button>
       </td>
@@ -62,6 +63,7 @@ function renderItems() {
     body.appendChild(tr);
   });
 }
+
 
 function addItem() {
   const id = document.getElementById('id').value.trim();
