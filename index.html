@@ -71,16 +71,22 @@ function addItem() {
 
   fetch(scriptURL, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: "add", id, location, date }),
-  }).then(() => {
+  })
+  .then(res => res.text())
+  .then(response => {
+    console.log("เพิ่มสินค้า:", response);  // 🟩 log บน Console
     document.getElementById('id').value = '';
     document.getElementById('location').value = '';
     fetchItems();
-  }).catch(error => alert("เกิดข้อผิดพลาด: " + error));
+  })
+  .catch(error => {
+    console.error("เกิดข้อผิดพลาด:", error); // 🟥 ถ้ามีปัญหา
+    alert("เกิดข้อผิดพลาดในการเชื่อมต่อ: " + error);
+  });
 }
+
 
 
 function deleteItem(row) {
