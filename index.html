@@ -79,8 +79,9 @@ function addItem() {
     document.getElementById('id').value = '';
     document.getElementById('location').value = '';
     fetchItems();
-  });
+  }).catch(error => alert("เกิดข้อผิดพลาด: " + error));
 }
+
 
 function deleteItem(row) {
   if (!confirm("ลบสินค้านี้หรือไม่?")) return;
